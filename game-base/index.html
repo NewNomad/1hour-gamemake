@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Base - 1時間ゲーム開発ワークショップ</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #333;
+            font-family: Arial, sans-serif;
+        }
+        main {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <main></main>
+    
+    <!-- p5.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    
+    <!-- Game Configuration -->
+    <script src="js/config.js"></script>
+    
+    <!-- Utilities -->
+    <script src="js/utils/helpers.js"></script>
+    <script src="js/utils/collision.js"></script>
+    
+    <!-- Classes -->
+    <script src="js/classes/GameObject.js"></script>
+    <script src="js/classes/Player.js"></script>
+    <script src="js/classes/Enemy.js"></script>
+    <script src="js/classes/GameState.js"></script>
+    
+    <!-- Main Game Loop -->
+    <script src="js/main.js"></script>
+</body>
+</html>
