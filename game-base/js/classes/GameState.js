@@ -4,6 +4,7 @@ class GameState {
         this.state = 'MENU'; // MENU, PLAYING, GAME_OVER, PAUSED
         this.player = null;
         this.enemies = [];
+        this.bullets = [];
         this.score = 0;
         this.enemySpawnTimer = 0;
         this.gameStartTime = 0;
@@ -25,8 +26,9 @@ class GameState {
     init() {
         this.player = new Player(CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2);
         this.enemies = [];
+        this.bullets = [];
         this.score = 0;
-        this.enemySpawnTimer = 0;
+        this.enemySpawnTimer = 25; // ゲーム開始から5フレーム後に最初の敵が出現
         this.resetStats();
     }
     
@@ -78,6 +80,9 @@ class GameState {
         // 敵の更新
         this.updateEnemies();
         
+        // 弾丸の更新
+        this.updateBullets();
+        
         // 当たり判定
         this.checkCollisions();
         
@@ -114,6 +119,29 @@ class GameState {
         }
     }
     
+    // 弾丸の更新
+    updateBullets() {
+        for (let bullet of this.bullets) {
+            if (bullet.isActive) {
+                bullet.update();
+                
+                // 弾丸と敵の当たり判定
+                const hitEnemy = bullet.checkEnemyCollision(this.enemies);
+                if (hitEnemy) {
+                    this.destroyEnemy(hitEnemy);
+                }
+            }
+        }
+    }
+    
+    // 弾丸発射
+    shootBullet() {
+        const bullet = this.player.shoot();
+        if (bullet) {
+            this.bullets.push(bullet);
+        }
+    }
+    
     // 当たり判定処理
     checkCollisions() {
         for (let enemy of this.enemies) {
@@ -141,6 +169,7 @@ class GameState {
     // 無効なオブジェクトの削除
     cleanupObjects() {
         this.enemies = this.enemies.filter(enemy => enemy.isActive);
+        this.bullets = this.bullets.filter(bullet => bullet.isActive);
     }
     
     // 描画処理
@@ -181,7 +210,8 @@ class GameState {
         textSize(24);
         text("スペースキーでゲーム開始", CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2);
         text("WASD または 矢印キーで移動", CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 + 40);
-        text("Dキーでデバッグモード切り替え", CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 + 80);
+        text("スペースキーで射撃", CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 + 80);
+        text("`キーでデバッグモード切り替え", CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 + 120);
         pop();
     }
     
@@ -194,6 +224,13 @@ class GameState {
         for (let enemy of this.enemies) {
             if (enemy.isActive) {
                 enemy.render();
+            }
+        }
+        
+        // 弾丸描画
+        for (let bullet of this.bullets) {
+            if (bullet.isActive) {
+                bullet.render();
             }
         }
         
@@ -267,8 +304,9 @@ class GameState {
         
         text(`FPS: ${frameRate().toFixed(1)}`, CONFIG.CANVAS_WIDTH - 120, 20);
         text(`敵の数: ${this.enemies.length}`, CONFIG.CANVAS_WIDTH - 120, 40);
-        text(`プレイヤー位置: (${this.player.x.toFixed(0)}, ${this.player.y.toFixed(0)})`, CONFIG.CANVAS_WIDTH - 120, 60);
-        text(`無敵: ${this.player.invulnerable}`, CONFIG.CANVAS_WIDTH - 120, 80);
+        text(`弾丸の数: ${this.bullets.length}`, CONFIG.CANVAS_WIDTH - 120, 60);
+        text(`プレイヤー位置: (${this.player.x.toFixed(0)}, ${this.player.y.toFixed(0)})`, CONFIG.CANVAS_WIDTH - 120, 80);
+        text(`無敵: ${this.player.invulnerable}`, CONFIG.CANVAS_WIDTH - 120, 100);
         
         pop();
     }
@@ -310,7 +348,7 @@ class GameState {
         }
         
         // 全状態共通
-        if (key === 'd' || key === 'D') {
+        if (key === '`') {
             toggleDebug();
         }
     }

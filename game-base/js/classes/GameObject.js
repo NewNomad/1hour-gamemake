@@ -40,9 +40,11 @@ class GameObject {
     // 画面外にいるかチェック
     isOffScreen() {
         const margin = this.size;
+        // 敵は右側から来るので、右側のマージンを大きくする
+        const rightMargin = this instanceof Enemy ? margin * 3 : margin;
         return (
             this.x < -margin ||
-            this.x > CONFIG.CANVAS_WIDTH + margin ||
+            this.x > CONFIG.CANVAS_WIDTH + rightMargin ||
             this.y < -margin ||
             this.y > CONFIG.CANVAS_HEIGHT + margin
         );

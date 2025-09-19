@@ -63,6 +63,12 @@ function keyPressed() {
     
     // 特殊なキー処理
     switch (key) {
+        case ' ':
+            // スペースキーで射撃（ゲームプレイ中のみ）
+            if (gameState.state === 'PLAYING') {
+                gameState.shootBullet();
+            }
+            break;
         case 'F':
         case 'f':
             // フルスクリーン切り替え（ブラウザ依存）

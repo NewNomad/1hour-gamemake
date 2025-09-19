@@ -6,6 +6,9 @@ class Player extends GameObject {
         this.invulnerable = false;
         this.invulnerabilityTime = 0;
         this.invulnerabilityDuration = 2000; // 2秒間無敵
+        
+        // 射撃関連
+        this.lastShotTime = 0;
     }
     
     update() {
@@ -136,6 +139,29 @@ class Player extends GameObject {
         return this.lives <= 0;
     }
     
+    // 射撃処理
+    shoot() {
+        const currentTime = millis();
+        
+        // クールダウン中かチェック
+        if (currentTime - this.lastShotTime < CONFIG.SHOOT_COOLDOWN) {
+            return null;
+        }
+        
+        // 弾丸を生成（プレイヤーの右端から右方向に発射）
+        const bulletX = this.x + this.size / 2 + 5;
+        const bulletY = this.y;
+        const bullet = new Bullet(bulletX, bulletY); // デフォルトで右方向
+        
+        this.lastShotTime = currentTime;
+        return bullet;
+    }
+    
+    // 射撃可能かチェック
+    canShoot() {
+        return (millis() - this.lastShotTime) >= CONFIG.SHOOT_COOLDOWN;
+    }
+    
     // リセット（新しいゲーム用）
     reset() {
         this.x = CONFIG.CANVAS_WIDTH / 2;
@@ -144,5 +170,6 @@ class Player extends GameObject {
         this.invulnerable = false;
         this.vx = 0;
         this.vy = 0;
+        this.lastShotTime = 0;
     }
 }

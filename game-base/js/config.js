@@ -9,10 +9,16 @@ const CONFIG = {
     PLAYER_SIZE: 30,
     PLAYER_COLOR: [100, 150, 255],
     
+    // 弾丸設定
+    BULLET_SPEED: 10,
+    BULLET_SIZE: 8,
+    BULLET_COLOR: [255, 255, 100],
+    SHOOT_COOLDOWN: 200, // ミリ秒
+    
     // 敵設定
     ENEMY_SPEED: 3,
     ENEMY_SIZE: 25,
-    ENEMY_SPAWN_RATE: 60, // フレーム数（60fps想定）
+    ENEMY_SPAWN_RATE: 30, // フレーム数（60fps想定）
     ENEMY_COLOR: [255, 100, 100],
     
     // ゲームバランス

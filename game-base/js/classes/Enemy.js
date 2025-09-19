@@ -13,7 +13,7 @@ class Enemy extends GameObject {
         
         this.movementPattern = this.getRandomMovementPattern();
         this.startY = y;
-        this.waveOffset = random(TWO_PI);
+        this.waveOffset = randomFloat(0, Math.PI * 2);
         
         // 基本的に左に移動
         this.vx = -this.speed;
@@ -22,7 +22,7 @@ class Enemy extends GameObject {
     // ランダムな移動パターンを選択
     getRandomMovementPattern() {
         const patterns = ['straight', 'wave', 'sine'];
-        return random(patterns);
+        return randomChoice(patterns);
     }
     
     update() {
@@ -59,13 +59,13 @@ class Enemy extends GameObject {
     // 波状移動
     updateWaveMovement() {
         this.vx = -this.speed;
-        this.vy = sin(this.getAge() * 0.01 + this.waveOffset) * 2;
+        this.vy = Math.sin(this.getAge() * 0.01 + this.waveOffset) * 2;
     }
     
     // サイン波移動
     updateSineMovement() {
         this.vx = -this.speed * 0.8;
-        this.vy = sin(this.x * 0.02 + this.waveOffset) * 1.5;
+        this.vy = Math.sin(this.x * 0.02 + this.waveOffset) * 1.5;
     }
     
     // ダメージを受ける
@@ -83,7 +83,7 @@ class Enemy extends GameObject {
         push();
         
         // HPに応じて色の透明度を変更
-        const alpha = map(this.hp, 0, this.maxHp, 100, 255);
+        const alpha = mapValue(this.hp, 0, this.maxHp, 100, 255);
         fill(this.color[0], this.color[1], this.color[2], alpha);
         
         // 敵のタイプに応じて形状を変更
@@ -127,15 +127,15 @@ class Enemy extends GameObject {
         
         // HP
         fill(255, 100, 100);
-        const hpWidth = map(this.hp, 0, this.maxHp, 0, barWidth);
+        const hpWidth = mapValue(this.hp, 0, this.maxHp, 0, barWidth);
         rect(this.x - barWidth/2 + hpWidth/2, barY, hpWidth, barHeight);
     }
     
     // 敵の生成位置をランダムに決定
     static getRandomSpawnPosition() {
         return {
-            x: CONFIG.CANVAS_WIDTH + 50, // 画面右端から少し外側
-            y: random(50, CONFIG.CANVAS_HEIGHT - 50)
+            x: CONFIG.CANVAS_WIDTH - 25, // 画面右端近く（画面内）
+            y: randomFloat(50, CONFIG.CANVAS_HEIGHT - 50)
         };
     }
     
@@ -144,7 +144,7 @@ class Enemy extends GameObject {
         const types = Object.keys(CONFIG.ENEMY_TYPES);
         const weights = [0.6, 0.3, 0.1]; // BASIC, FAST, TANKの出現確率
         
-        const rand = random();
+        const rand = Math.random();
         let weightSum = 0;
         
         for (let i = 0; i < types.length; i++) {
