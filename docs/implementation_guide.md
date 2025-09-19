@@ -425,50 +425,92 @@ function keyPressed() {
 
 ### フェーズ2: 法則1実装（意味のある選択）
 
-#### 距離ベースシステム追加
+#### ショットガンシステム追加
 ```javascript
-// Player.jsに追加
-getDistanceToNearestEnemy() {
-  let minDistance = Infinity;
-  for (let enemy of gameState.enemies) {
-    const distance = getDistanceBetween(this, enemy);
-    minDistance = Math.min(minDistance, distance);
-  }
-  return minDistance === Infinity ? 0 : minDistance;
-}
-
 // CONFIG.jsに追加
 const CONFIG = {
   // ...existing config...
   
   // 法則1: 意味のある選択
   LAW_OF_CHOICE: {
-    CLOSE_RANGE: 100,
-    MEDIUM_RANGE: 200,
-    CLOSE_DAMAGE_MULTIPLIER: 3,
-    CLOSE_RISK_MULTIPLIER: 2,
-    DISTANCE_SPAWN_RATE: 1.5
+    ENABLED: true,
+    SHOTGUN_SPREAD_ANGLE: 15,  // ショットガンの拡散角度（度）
+    CLOSE_RANGE: 150,          // 近距離判定（ピクセル）
+    MID_RANGE: 300,            // 中距離判定（ピクセル）
+    
+    // 距離ベースの発射レート（ミリ秒）
+    SHOOT_COOLDOWN_CLOSE: 100,   // 近距離: 高速
+    SHOOT_COOLDOWN_MID: 200,     // 中距離: 中速  
+    SHOOT_COOLDOWN_FAR: 300,     // 遠距離: 低速
+    
+    // ダメージ倍率
+    DAMAGE_MULTIPLIER_CLOSE: 3,  // 近距離時の全弾ヒットダメージ
+    DAMAGE_MULTIPLIER_MID: 2,    // 中距離時
+    DAMAGE_MULTIPLIER_FAR: 1     // 遠距離時
   }
 };
 
-// GameState.jsのupdateSpawning()を修正
-getSpawnInterval() {
-  const baseInterval = CONFIG.SPAWN_INTERVAL;
-  const distance = this.player.getDistanceToNearestEnemy();
+// Player.jsのshoot()メソッドを改修
+shoot(enemies) {
+  const currentTime = millis();
+  const shootCooldown = this.getShootCooldown(enemies);
   
-  // 遠距離にいると敵の出現が早くなる
-  if (distance > CONFIG.LAW_OF_CHOICE.MEDIUM_RANGE) {
-    return baseInterval / CONFIG.LAW_OF_CHOICE.DISTANCE_SPAWN_RATE;
+  if (currentTime - this.lastShotTime < shootCooldown) {
+    return null;
   }
   
-  return baseInterval;
+  const bullets = [];
+  
+  if (CONFIG.LAW_OF_CHOICE.ENABLED) {
+    // ショットガンシステム: 3つの弾を発射
+    const bulletX = this.x + this.size / 2 + 5;
+    const bulletY = this.y;
+    const spreadAngle = CONFIG.LAW_OF_CHOICE.SHOTGUN_SPREAD_ANGLE;
+    
+    // 中央、上、下の3方向に発射
+    bullets.push(new Bullet(bulletX, bulletY, 1, 0));
+    
+    const upAngleRad = -spreadAngle * Math.PI / 180;
+    bullets.push(new Bullet(bulletX, bulletY, Math.cos(upAngleRad), Math.sin(upAngleRad)));
+    
+    const downAngleRad = spreadAngle * Math.PI / 180;
+    bullets.push(new Bullet(bulletX, bulletY, Math.cos(downAngleRad), Math.sin(downAngleRad)));
+  }
+  
+  this.lastShotTime = currentTime;
+  return bullets;
+}
+
+// 距離ベースの発射レート計算
+getShootCooldown(enemies) {
+  if (!CONFIG.LAW_OF_CHOICE.ENABLED) {
+    return CONFIG.SHOOT_COOLDOWN;
+  }
+  
+  const closestDistance = this.getClosestEnemyDistance(enemies);
+  
+  if (closestDistance <= CONFIG.LAW_OF_CHOICE.CLOSE_RANGE) {
+    return CONFIG.LAW_OF_CHOICE.SHOOT_COOLDOWN_CLOSE;
+  } else if (closestDistance <= CONFIG.LAW_OF_CHOICE.MID_RANGE) {
+    return CONFIG.LAW_OF_CHOICE.SHOOT_COOLDOWN_MID;
+  } else {
+    return CONFIG.LAW_OF_CHOICE.SHOOT_COOLDOWN_FAR;
+  }
 }
 ```
 
 ### フェーズ3: 法則2実装（フィードバックループ）
 
-#### エフェクトシステム追加
+#### 視覚フィードバッククラスによるエフェクトシステム
 ```javascript
+// CONFIG.jsに追加
+LAW_OF_FEEDBACK: {
+  SCREEN_SHAKE: 5,      // 画面揺れ強度
+  PARTICLE_COUNT: 10,   // パーティクル数
+  ANIMATION_SPEED: 0.1, // アニメーション速度
+  COMBO_DISPLAY: true   // コンボ表示
+}
+
 // 新規ファイル: js/classes/Effect.js
 class Effect extends GameObject {
   constructor(x, y, type, options = {}) {
@@ -490,16 +532,20 @@ class Effect extends GameObject {
     const alpha = this.life / this.maxLife;
     
     push();
-    tint(255, alpha * 255);
     
     switch (this.type) {
-      case 'explosion':
-        fill(255, 100, 100);
-        circle(this.x, this.y, (1 - alpha) * 50);
+      case 'particle':
+        // 移動時・発射時のパーティクル
+        fill(255, 255, 100, alpha * 255);
+        circle(this.x, this.y, alpha * 5);
         break;
-      case 'hit':
-        fill(255, 255, 100);
-        circle(this.x, this.y, alpha * 20);
+      case 'muzzle_flash':
+        // 発射時の火花エフェクト
+        fill(255, 200, 100, alpha * 255);
+        circle(this.x, this.y, (1 - alpha) * 15);
+        break;
+      case 'screen_shake':
+        // 画面揺れ効果（描画はGameStateで処理）
         break;
     }
     
@@ -507,7 +553,36 @@ class Effect extends GameObject {
   }
 }
 
-// GameState.jsに追加
+// Player.jsにSquash & Stretchアニメーション追加
+render(enemies = []) {
+  push();
+  
+  // Squash & Stretch効果
+  let scaleX = 1;
+  let scaleY = 1;
+  
+  if (this.vx !== 0 || this.vy !== 0) {
+    // 移動時: 移動方向に伸び
+    scaleX = 1 + abs(this.vx) * CONFIG.LAW_OF_FEEDBACK.ANIMATION_SPEED;
+    scaleY = 1 + abs(this.vy) * CONFIG.LAW_OF_FEEDBACK.ANIMATION_SPEED;
+  }
+  
+  if (this.justShot) {
+    // 発射時: 反動で縮み
+    scaleX *= 0.9;
+    scaleY *= 1.1;
+    this.justShot = false;
+  }
+  
+  scale(scaleX, scaleY);
+  
+  // プレイヤー描画（距離ベースの色変化含む）
+  // ... existing render code ...
+  
+  pop();
+}
+
+// GameState.jsにフィードバックシステム追加
 constructor() {
   // ...existing...
   this.effects = [];
@@ -522,45 +597,138 @@ addEffect(x, y, type, options) {
 applyScreenShake(intensity) {
   this.screenShake = intensity;
 }
+
+// 画面揺れ処理
+updateScreenShake() {
+  if (this.screenShake > 0) {
+    const shakeX = random(-this.screenShake, this.screenShake);
+    const shakeY = random(-this.screenShake, this.screenShake);
+    translate(shakeX, shakeY);
+    this.screenShake *= 0.9; // 減衰
+  }
+}
 ```
 
 ### フェーズ4: 法則3実装（発見の喜び）
 
-#### 隠し要素システム
+#### ランダムマップ生成とパワーアップ選択システム
 ```javascript
 // CONFIG.jsに追加
 LAW_OF_DISCOVERY: {
-  HIDDEN_COMBO: ['red', 'blue', 'red'],
-  CHAIN_REACTION: true,
-  CRITICAL_CHANCE: 0.1,
-  SECRET_EFFECTS: true
+  CRITICAL_CHANCE: 0.1,     // 隠しメカニクス
+  MAP_VARIATIONS: 5,        // マップパターン数
+  POWERUP_COUNT: 3,         // 選択肢数
+  PENALTY_MULTIPLIER: 1.2   // ペナルティ倍率
 }
 
-// Enemy.jsに追加
-constructor(x, y, type = null) {
-  // ...existing...
-  this.type = type || this.getRandomType();
-  this.color = this.getTypeColor();
+// 新規ファイル: js/systems/discovery.js
+class DiscoverySystem {
+  static generateRandomEnemyPattern(stageNumber) {
+    const patterns = [
+      // パターン1: 上からの直線攻撃
+      { formation: 'line', direction: 'down', count: 3 },
+      // パターン2: 左右からの挟み撃ち
+      { formation: 'pincer', direction: 'sides', count: 4 },
+      // パターン3: ランダム配置
+      { formation: 'random', direction: 'any', count: 5 },
+      // パターン4: 円形配置
+      { formation: 'circle', direction: 'center', count: 6 },
+      // パターン5: 波状攻撃
+      { formation: 'wave', direction: 'down', count: 8 }
+    ];
+    
+    const patternIndex = (stageNumber + Math.floor(Math.random() * patterns.length)) % patterns.length;
+    return patterns[patternIndex];
+  }
+  
+  static generatePowerUpChoices() {
+    const powerUps = [
+      {
+        name: "高速発射",
+        effect: { fireRate: 1.5 },
+        penalty: { enemySpeed: 1.2 },
+        description: "発射レート+50%（敵速度+20%）"
+      },
+      {
+        name: "攻撃力強化", 
+        effect: { damage: 2.0 },
+        penalty: { enemyHP: 2 },
+        description: "攻撃力2倍（敵HP2倍）"
+      },
+      {
+        name: "機動力向上",
+        effect: { speed: 1.3 },
+        penalty: { enemyCount: 1.3 },
+        description: "移動速度+30%（敵出現数+30%）"
+      },
+      {
+        name: "ショットガン拡散",
+        effect: { spreadAngle: 25 },
+        penalty: { enemySize: 1.1 },
+        description: "拡散角度拡大（敵サイズ+10%）"
+      }
+    ];
+    
+    // ランダムに3つ選択
+    const shuffled = powerUps.sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, CONFIG.LAW_OF_DISCOVERY.POWERUP_COUNT);
+  }
+  
+  static applyPowerUp(choice, gameState) {
+    // プレイヤー強化
+    if (choice.effect.fireRate) {
+      CONFIG.LAW_OF_CHOICE.SHOOT_COOLDOWN_CLOSE /= choice.effect.fireRate;
+      CONFIG.LAW_OF_CHOICE.SHOOT_COOLDOWN_MID /= choice.effect.fireRate;
+      CONFIG.LAW_OF_CHOICE.SHOOT_COOLDOWN_FAR /= choice.effect.fireRate;
+    }
+    
+    if (choice.effect.damage) {
+      CONFIG.LAW_OF_CHOICE.DAMAGE_MULTIPLIER_CLOSE *= choice.effect.damage;
+      CONFIG.LAW_OF_CHOICE.DAMAGE_MULTIPLIER_MID *= choice.effect.damage;
+      CONFIG.LAW_OF_CHOICE.DAMAGE_MULTIPLIER_FAR *= choice.effect.damage;
+    }
+    
+    if (choice.effect.speed) {
+      CONFIG.PLAYER_SPEED *= choice.effect.speed;
+    }
+    
+    if (choice.effect.spreadAngle) {
+      CONFIG.LAW_OF_CHOICE.SHOTGUN_SPREAD_ANGLE = choice.effect.spreadAngle;
+    }
+    
+    // ペナルティ適用
+    if (choice.penalty.enemySpeed) {
+      CONFIG.ENEMY_SPEED *= choice.penalty.enemySpeed;
+    }
+    
+    if (choice.penalty.enemyHP) {
+      Object.keys(CONFIG.ENEMY_TYPES).forEach(type => {
+        CONFIG.ENEMY_TYPES[type].hp *= choice.penalty.enemyHP;
+      });
+    }
+    
+    if (choice.penalty.enemyCount) {
+      CONFIG.ENEMY_SPAWN_RATE /= choice.penalty.enemyCount;
+    }
+    
+    if (choice.penalty.enemySize) {
+      Object.keys(CONFIG.ENEMY_TYPES).forEach(type => {
+        CONFIG.ENEMY_TYPES[type].size *= choice.penalty.enemySize;
+      });
+    }
+  }
 }
 
-getRandomType() {
-  const types = ['red', 'blue', 'green'];
-  return random(types);
+// GameState.jsにステージクリア処理
+onStageComplete() {
+  this.state = 'POWERUP_SELECTION';
+  this.powerUpChoices = DiscoverySystem.generatePowerUpChoices();
 }
 
-getTypeColor() {
-  const colors = {
-    red: '#ff4444',
-    blue: '#4444ff',
-    green: '#44ff44'
-  };
-  return colors[this.type] || CONFIG.ENEMY_COLOR;
-}
-
-// GameState.jsに隠しコンボ検出
-checkHiddenCombos() {
-  // 最近撃破した敵のタイプを記録
-  // 特定の順序で撃破された場合の特殊効果
+handlePowerUpSelection(choiceIndex) {
+  const selectedChoice = this.powerUpChoices[choiceIndex];
+  DiscoverySystem.applyPowerUp(selectedChoice, this);
+  this.nextStage();
 }
 ```
 

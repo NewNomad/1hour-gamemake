@@ -417,26 +417,34 @@ const CONFIG = {
   
   // 3つの法則設定
   LAW_OF_CHOICE: {
-    CLOSE_RANGE: 100,
-    MEDIUM_RANGE: 200,
-    RISK_MULTIPLIER: 3,
-    DISTANCE_SPAWN_RATE: 2
+    ENABLED: true,
+    SHOTGUN_SPREAD_ANGLE: 15,  // ショットガンの拡散角度（度）
+    CLOSE_RANGE: 150,          // 近距離判定（ピクセル）
+    MID_RANGE: 300,            // 中距離判定（ピクセル）
+    
+    // 距離ベースの発射レート（ミリ秒）
+    SHOOT_COOLDOWN_CLOSE: 100,   // 近距離: 高速
+    SHOOT_COOLDOWN_MID: 200,     // 中距離: 中速  
+    SHOOT_COOLDOWN_FAR: 300,     // 遠距離: 低速
+    
+    // ダメージ倍率
+    DAMAGE_MULTIPLIER_CLOSE: 3,  // 近距離時の全弾ヒットダメージ
+    DAMAGE_MULTIPLIER_MID: 2,    // 中距離時
+    DAMAGE_MULTIPLIER_FAR: 1     // 遠距離時
   },
   
   LAW_OF_FEEDBACK: {
-    SCREEN_SHAKE: 5,
-    COMBO_THRESHOLD: 3,
-    FEEDBACK_DURATION: 10,
-    FLASH_FREQUENCY: 5,
-    HIT_FLASH_DURATION: 10
+    SCREEN_SHAKE: 5,      // 画面揺れ強度
+    PARTICLE_COUNT: 10,   // パーティクル数
+    ANIMATION_SPEED: 0.1, // アニメーション速度
+    COMBO_DISPLAY: true   // コンボ表示
   },
   
   LAW_OF_DISCOVERY: {
-    HIDDEN_COMBO: ['red', 'blue', 'red'],
-    CHAIN_REACTION: true,
-    BOUNCE_WALLS: true,
-    CRITICAL_CHANCE: 0.1,
-    CHAOS_FACTOR: 0.05
+    CRITICAL_CHANCE: 0.1,     // 隠しメカニクス
+    MAP_VARIATIONS: 5,        // マップパターン数
+    POWERUP_COUNT: 3,         // 選択肢数
+    PENALTY_MULTIPLIER: 1.2   // ペナルティ倍率
   },
   
   // デバッグ設定
@@ -472,7 +480,8 @@ function updateConfig(path, value) {
 
 // 使用例
 updateConfig('PLAYER_SPEED', 10);
-updateConfig('LAW_OF_CHOICE.RISK_MULTIPLIER', 5);
+updateConfig('LAW_OF_CHOICE.SHOTGUN_SPREAD_ANGLE', 25);
+updateConfig('LAW_OF_FEEDBACK.SCREEN_SHAKE', 10);
 ```
 
 ## ユーティリティ システム
