@@ -100,27 +100,41 @@ class GameState {
         this.background.updatePlayerPosition(this.player.y);
         this.background.update();
         
-        // プレイヤー更新
-        this.player.update();
+        // 発見システムによる敵削除要求をチェック（法則3: 発見の喜び）
+        if (CONFIG.LAW_OF_DISCOVERY.ENABLED && this.discoverySystem.checkAndClearEnemies()) {
+            this.clearAllEnemies();
+        }
         
-        // 敵の出現
-        this.spawnEnemies();
+        // パワーアップ選択中は時間停止（法則3: 発見の喜び）
+        const timeStopped = CONFIG.LAW_OF_DISCOVERY.ENABLED && this.discoverySystem.powerUpSelectionActive;
         
-        // 敵の更新
-        this.updateEnemies();
-        
-        // 弾丸の更新
-        this.updateBullets();
-        
-        // 当たり判定
-        this.checkCollisions();
-        
-        // 無効なオブジェクトを削除
-        this.cleanupObjects();
-        
-        // ゲームオーバーチェック
-        if (this.player.isDead()) {
-            this.endGame();
+        if (!timeStopped) {
+            // プレイヤー更新
+            this.player.update();
+            
+            // 敵の出現
+            this.spawnEnemies();
+            
+            // 敵の更新
+            this.updateEnemies();
+            
+            // 弾丸の更新
+            this.updateBullets();
+            
+            // 当たり判定
+            this.checkCollisions();
+            
+            // 無効なオブジェクトを削除
+            this.cleanupObjects();
+            
+            // ゲームオーバーチェック
+            if (this.player.isDead()) {
+                this.endGame();
+            }
+        } else {
+            // パワーアップ選択中は最小限の更新のみ
+            // プレイヤーの表示は維持（移動は無効）
+            // 弾丸とエフェクトは継続表示
         }
     }
     
@@ -262,6 +276,17 @@ class GameState {
     cleanupObjects() {
         this.enemies = this.enemies.filter(enemy => enemy.isActive);
         this.bullets = this.bullets.filter(bullet => bullet.isActive);
+    }
+    
+    // 全ての敵を削除（ウェーブクリア時用）
+    clearAllEnemies() {
+        for (let enemy of this.enemies) {
+            if (enemy.isActive) {
+                enemy.destroy();
+            }
+        }
+        this.enemies = [];
+        console.log('All enemies cleared for wave transition');
     }
     
     // 描画処理

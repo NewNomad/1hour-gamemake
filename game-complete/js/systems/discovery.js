@@ -13,6 +13,9 @@ class DiscoverySystem {
         this.powerUpSelectionActive = false;
         this.availablePowerUps = [];
         
+        // 敵削除フラグ
+        this.clearAllEnemiesRequested = false;
+        
         this.generateNewPattern();
     }
     
@@ -48,6 +51,9 @@ class DiscoverySystem {
         
         // パワーアップ選択を開始
         this.startPowerUpSelection();
+        
+        // 残存する敵を全て削除要求
+        this.clearAllEnemiesRequested = true;
     }
     
     // パワーアップ選択を開始
@@ -329,6 +335,15 @@ class DiscoverySystem {
         pop();
     }
     
+    // 敵削除要求をチェックして処理
+    checkAndClearEnemies() {
+        if (this.clearAllEnemiesRequested) {
+            this.clearAllEnemiesRequested = false;
+            return true; // 敵削除要求あり
+        }
+        return false;
+    }
+    
     // リセット
     reset() {
         this.currentWave = 1;
@@ -338,6 +353,7 @@ class DiscoverySystem {
         this.activePowerUps = [];
         this.powerUpSelectionActive = false;
         this.availablePowerUps = [];
+        this.clearAllEnemiesRequested = false;
         this.generateNewPattern();
     }
 }
