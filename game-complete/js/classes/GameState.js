@@ -23,6 +23,9 @@ class GameState {
         this.effectManager = new EffectManager();
         this.visualFeedback = new VisualFeedback();
         
+        // パララックス背景システム
+        this.background = new Background();
+        
         this.init();
     }
     
@@ -39,6 +42,9 @@ class GameState {
         // エフェクトシステムをリセット
         this.effectManager.clearAllEffects();
         this.visualFeedback.resetAllEffects();
+        
+        // 背景システムをリセット
+        this.background.reset();
     }
     
     // ゲーム開始
@@ -83,6 +89,10 @@ class GameState {
         // エフェクトシステム更新（法則2: フィードバックループ）
         this.effectManager.update();
         this.visualFeedback.update();
+        
+        // 背景システム更新（ハイブリッドパララックス効果）
+        this.background.updatePlayerPosition(this.player.y);
+        this.background.update();
         
         // プレイヤー更新
         this.player.update();
@@ -269,6 +279,9 @@ class GameState {
     
     // ゲーム画面描画
     renderGame() {
+        // 背景描画（最下層）
+        this.background.render();
+        
         // ビジュアルフィードバック前処理（カメラ変換など）
         this.visualFeedback.applyPreRenderTransforms();
         
@@ -431,6 +444,9 @@ class GameState {
         // エフェクトシステムのデバッグ情報
         this.effectManager.renderDebugInfo();
         this.visualFeedback.renderDebugInfo();
+        
+        // 背景システムのデバッグ情報
+        this.background.renderDebugInfo();
         
         pop();
     }

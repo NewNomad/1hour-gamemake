@@ -108,6 +108,45 @@ const CONFIG = {
         }
     },
     
+    // パララックス背景設定
+    BACKGROUND: {
+        ENABLED: true,
+        BASE_SCROLL_SPEED: 1.5,      // 横方向の基本スクロール速度
+        VERTICAL_PARALLAX: 0.2,      // 縦方向のパララックス強度
+        LAYERS: [
+            {
+                // 遠景レイヤー
+                SPEED_FACTOR: 0.2,
+                COLOR: [40, 45, 55],
+                BUILDING_COUNT: 15,
+                MIN_HEIGHT: 100,
+                MAX_HEIGHT: 200,
+                MIN_WIDTH: 80,
+                MAX_WIDTH: 120
+            },
+            {
+                // 中景レイヤー
+                SPEED_FACTOR: 0.5,
+                COLOR: [60, 65, 75],
+                BUILDING_COUNT: 12,
+                MIN_HEIGHT: 150,
+                MAX_HEIGHT: 300,
+                MIN_WIDTH: 60,
+                MAX_WIDTH: 100
+            },
+            {
+                // 近景レイヤー
+                SPEED_FACTOR: 0.8,
+                COLOR: [80, 85, 95],
+                BUILDING_COUNT: 8,
+                MIN_HEIGHT: 200,
+                MAX_HEIGHT: 400,
+                MIN_WIDTH: 40,
+                MAX_WIDTH: 80
+            }
+        ]
+    },
+    
     // デバッグ設定
     DEBUG_MODE: false,
     SHOW_HITBOXES: false,
