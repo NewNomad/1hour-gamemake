@@ -19,17 +19,26 @@ class GameState {
             currentCombo: 0
         };
         
+        // エフェクトシステム（法則2: フィードバックループ）
+        this.effectManager = new EffectManager();
+        this.visualFeedback = new VisualFeedback();
+        
         this.init();
     }
     
     // 初期化
     init() {
         this.player = new Player(CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2);
+        this.player.effectManager = this.effectManager; // エフェクトマネージャーへの参照を渡す
         this.enemies = [];
         this.bullets = [];
         this.score = 0;
         this.enemySpawnTimer = 25; // ゲーム開始から5フレーム後に最初の敵が出現
         this.resetStats();
+        
+        // エフェクトシステムをリセット
+        this.effectManager.clearAllEffects();
+        this.visualFeedback.resetAllEffects();
     }
     
     // ゲーム開始
@@ -70,6 +79,10 @@ class GameState {
     // ゲームプレイ中のアップデート
     updateGame() {
         this.gameTime = (millis() - this.gameStartTime) / 1000;
+        
+        // エフェクトシステム更新（法則2: フィードバックループ）
+        this.effectManager.update();
+        this.visualFeedback.update();
         
         // プレイヤー更新
         this.player.update();
@@ -140,10 +153,29 @@ class GameState {
         if (bullets) {
             // 配列の場合は全ての弾を追加
             if (Array.isArray(bullets)) {
+                // エフェクトマネージャーへの参照を設定
+                bullets.forEach(bullet => {
+                    bullet.effectManager = this.effectManager;
+                });
                 this.bullets.push(...bullets);
+                
+                // 射撃エフェクト（法則2: フィードバックループ）
+                if (CONFIG.LAW_OF_FEEDBACK.ENABLED && bullets.length > 0) {
+                    const shootX = bullets[0].x - 10; // 銃口位置
+                    const shootY = bullets[0].y;
+                    this.effectManager.createMuzzleFlash(shootX, shootY, { x: 1, y: 0 });
+                }
             } else {
                 // 単発の場合（後方互換性）
+                bullets.effectManager = this.effectManager;
                 this.bullets.push(bullets);
+                
+                // 射撃エフェクト
+                if (CONFIG.LAW_OF_FEEDBACK.ENABLED) {
+                    const shootX = bullets.x - 10;
+                    const shootY = bullets.y;
+                    this.effectManager.createMuzzleFlash(shootX, shootY, { x: 1, y: 0 });
+                }
             }
         }
     }
@@ -168,6 +200,20 @@ class GameState {
             this.stats.enemiesDestroyed++;
             this.stats.currentCombo++;
             this.stats.maxCombo = Math.max(this.stats.maxCombo, this.stats.currentCombo);
+            
+            // エフェクト生成（法則2: フィードバックループ）
+            if (CONFIG.LAW_OF_FEEDBACK.ENABLED) {
+                // 爆発エフェクト
+                const intensity = Math.min(this.stats.currentCombo / 5, 2);
+                this.effectManager.createExplosion(enemy.x, enemy.y, intensity, enemy.color || [255, 100, 100]);
+                
+                // コンボエフェクト
+                if (this.stats.currentCombo > 1) {
+                    this.effectManager.createComboEffect(enemy.x, enemy.y, this.stats.currentCombo);
+                    this.visualFeedback.triggerHitStop(this.stats.currentCombo);
+                }
+            }
+            
             enemy.destroy();
         }
     }
@@ -223,6 +269,9 @@ class GameState {
     
     // ゲーム画面描画
     renderGame() {
+        // ビジュアルフィードバック前処理（カメラ変換など）
+        this.visualFeedback.applyPreRenderTransforms();
+        
         // プレイヤー描画（敵の情報も渡す）
         this.player.render(this.enemies);
         
@@ -239,6 +288,12 @@ class GameState {
                 bullet.render();
             }
         }
+        
+        // エフェクト描画（法則2: フィードバックループ）
+        this.effectManager.render();
+        
+        // ビジュアルフィードバック後処理（ポストエフェクトなど）
+        this.visualFeedback.applyPostRenderEffects();
         
         // UI描画
         this.renderUI();
@@ -257,8 +312,67 @@ class GameState {
         text(`時間: ${this.gameTime.toFixed(1)}s`, 20, 80);
         text(`敵撃破: ${this.stats.enemiesDestroyed}`, 20, 110);
         
+        // コンボカウンター（法則2: フィードバックループで強化）
         if (this.stats.currentCombo > 0) {
+            this.renderComboCounter();
+        }
+        
+        pop();
+    }
+    
+    // コンボカウンター描画（法則2: フィードバックループ）
+    renderComboCounter() {
+        if (!CONFIG.LAW_OF_FEEDBACK.COMBO_EFFECTS.ENABLED) {
+            // 通常のコンボ表示
             text(`コンボ: ${this.stats.currentCombo}`, 20, 140);
+            return;
+        }
+        
+        push();
+        
+        // コンボ数に応じた視覚効果
+        const comboIntensity = Math.min(this.stats.currentCombo / 10, 2);
+        const pulsePhase = millis() * 0.01 * CONFIG.LAW_OF_FEEDBACK.COMBO_EFFECTS.PULSE_FREQUENCY;
+        const pulseFactor = 1 + Math.sin(pulsePhase) * 0.2 * comboIntensity;
+        
+        // 位置とサイズ
+        const x = 20;
+        const y = 140;
+        const baseSize = 20;
+        const currentSize = baseSize * pulseFactor * CONFIG.LAW_OF_FEEDBACK.COMBO_EFFECTS.SCALE_BOOST;
+        
+        // グロー効果
+        if (CONFIG.LAW_OF_FEEDBACK.GLOW.ENABLED) {
+            const glowIntensity = comboIntensity * 0.5;
+            for (let i = 3; i > 0; i--) {
+                fill(255, 255 - this.stats.currentCombo * 10, 100, glowIntensity * 50 / i);
+                textSize(currentSize * (1 + i * 0.1));
+                text(`コンボ: ${this.stats.currentCombo}`, x, y);
+            }
+        }
+        
+        // メインテキスト
+        fill(
+            255,
+            Math.max(255 - this.stats.currentCombo * 15, 50),
+            Math.max(100 + this.stats.currentCombo * 10, 255),
+            255
+        );
+        textSize(currentSize);
+        textAlign(LEFT, TOP);
+        text(`コンボ: ${this.stats.currentCombo}`, x, y);
+        
+        // 高コンボ時の追加エフェクト
+        if (this.stats.currentCombo >= 5) {
+            fill(255, 255, 255, Math.sin(pulsePhase * 2) * 100 + 100);
+            textSize(12);
+            text('EXCELLENT!', x + 120, y);
+        }
+        
+        if (this.stats.currentCombo >= 10) {
+            fill(255, 200, 0, Math.sin(pulsePhase * 3) * 150 + 100);
+            textSize(14);
+            text('AMAZING!', x + 120, y + 20);
         }
         
         pop();
@@ -313,6 +427,10 @@ class GameState {
         text(`弾丸の数: ${this.bullets.length}`, CONFIG.CANVAS_WIDTH - 120, 60);
         text(`プレイヤー位置: (${this.player.x.toFixed(0)}, ${this.player.y.toFixed(0)})`, CONFIG.CANVAS_WIDTH - 120, 80);
         text(`無敵: ${this.player.invulnerable}`, CONFIG.CANVAS_WIDTH - 120, 100);
+        
+        // エフェクトシステムのデバッグ情報
+        this.effectManager.renderDebugInfo();
+        this.visualFeedback.renderDebugInfo();
         
         pop();
     }

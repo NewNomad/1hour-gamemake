@@ -43,6 +43,71 @@ const CONFIG = {
         DAMAGE_MULTIPLIER_FAR: 1     // 遠距離時
     },
     
+    // 法則2: フィードバックループの設定
+    LAW_OF_FEEDBACK: {
+        ENABLED: true,
+        
+        // 画面揺れ
+        SCREEN_SHAKE: {
+            ENABLED: true,
+            INTENSITY: 5,           // 揺れの強さ
+            DURATION: 200,          // 揺れの持続時間（ミリ秒）
+            FREQUENCY: 20           // 揺れの頻度
+        },
+        
+        // Squash & Stretch アニメーション
+        SQUASH_STRETCH: {
+            ENABLED: true,
+            SCALE_FACTOR: 0.15,     // スケール変化の強さ
+            DURATION: 150           // アニメーション持続時間（ミリ秒）
+        },
+        
+        // パーティクルエフェクト
+        PARTICLES: {
+            ENABLED: true,
+            
+            // 移動時のパーティクル
+            MOVEMENT: {
+                COUNT: 2,           // 1フレームあたりの生成数
+                LIFETIME: 300,      // パーティクル寿命（ミリ秒）
+                SIZE: 3,            // パーティクルサイズ
+                SPEED: 1.5          // パーティクル速度
+            },
+            
+            // 射撃時のパーティクル
+            SHOOTING: {
+                COUNT: 5,           // 発射時の生成数
+                LIFETIME: 400,      // パーティクル寿命（ミリ秒）
+                SIZE: 2,            // パーティクルサイズ
+                SPEED: 3            // パーティクル速度
+            },
+            
+            // 爆発エフェクト（敵破壊時）
+            EXPLOSION: {
+                COUNT: 8,           // 爆発時の生成数
+                LIFETIME: 600,      // パーティクル寿命（ミリ秒）
+                SIZE: 4,            // パーティクルサイズ
+                SPEED: 4            // パーティクル速度
+            }
+        },
+        
+        // Glow/Bloomエフェクト
+        GLOW: {
+            ENABLED: true,
+            INTENSITY: 0.8,         // グロー強度
+            BLUR_RADIUS: 10,        // ぼかし半径
+            THRESHOLD: 200          // グローを適用する明度閾値
+        },
+        
+        // コンボエフェクト
+        COMBO_EFFECTS: {
+            ENABLED: true,
+            SCALE_BOOST: 1.5,       // コンボ時のスケール倍率
+            COLOR_INTENSITY: 2.0,   // 色強度倍率
+            PULSE_FREQUENCY: 8      // パルス頻度
+        }
+    },
+    
     // デバッグ設定
     DEBUG_MODE: false,
     SHOW_HITBOXES: false,
