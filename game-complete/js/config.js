@@ -58,8 +58,8 @@ const CONFIG = {
         // Squash & Stretch アニメーション
         SQUASH_STRETCH: {
             ENABLED: true,
-            SCALE_FACTOR: 0.15,     // スケール変化の強さ
-            DURATION: 150           // アニメーション持続時間（ミリ秒）
+            SCALE_FACTOR: 0.35,     // スケール変化の強さ
+            DURATION: 300           // アニメーション持続時間（ミリ秒）
         },
         
         // パーティクルエフェクト
@@ -104,7 +104,7 @@ const CONFIG = {
             ENABLED: true,
             SCALE_BOOST: 1.5,       // コンボ時のスケール倍率
             COLOR_INTENSITY: 2.0,   // 色強度倍率
-            PULSE_FREQUENCY: 8      // パルス頻度
+            PULSE_FREQUENCY: 2      // パルス頻度
         }
     },
     

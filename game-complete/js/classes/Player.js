@@ -139,15 +139,16 @@ class Player extends GameObject {
             } else {
                 // イージング適用（バウンス効果）
                 const easeProgress = this.easeOutBounce(progress);
-                ss.scaleX = lerp(ss.targetScaleX, 1.0, easeProgress);
-                ss.scaleY = lerp(ss.targetScaleY, 1.0, easeProgress);
+                // より強いバネ効果のため、逆向きの補間
+                ss.scaleX = ss.targetScaleX + (1.0 - ss.targetScaleX) * easeProgress;
+                ss.scaleY = ss.targetScaleY + (1.0 - ss.targetScaleY) * easeProgress;
             }
         }
         
-        // アニメーションが非アクティブの場合は通常スケール
+        // アニメーションが非アクティブの場合は通常スケール（バネで戻る）
         if (!ss.active) {
-            ss.scaleX = lerp(ss.scaleX, 1.0, 0.1);
-            ss.scaleY = lerp(ss.scaleY, 1.0, 0.1);
+            ss.scaleX = lerp(ss.scaleX, 1.0, 0.15);
+            ss.scaleY = lerp(ss.scaleY, 1.0, 0.15);
         }
     }
     
@@ -216,16 +217,22 @@ class Player extends GameObject {
         return baseColor;
     }
     
-    // バウンスイージング関数
+    // バウンスイージング関数（よりバネらしく）
     easeOutBounce(t) {
-        if (t < 1 / 2.75) {
-            return 7.5625 * t * t;
-        } else if (t < 2 / 2.75) {
-            return 7.5625 * (t -= 1.5 / 2.75) * t + 0.75;
-        } else if (t < 2.5 / 2.75) {
-            return 7.5625 * (t -= 2.25 / 2.75) * t + 0.9375;
+        const n1 = 7.5625;
+        const d1 = 2.75;
+        
+        if (t < 1 / d1) {
+            return n1 * t * t;
+        } else if (t < 2 / d1) {
+            return n1 * (t -= 1.5 / d1) * t + 0.75;
+        } else if (t < 2.5 / d1) {
+            return n1 * (t -= 2.25 / d1) * t + 0.9375;
+        } else if (t < 2.8 / d1) {
+            return n1 * (t -= 2.625 / d1) * t + 0.984375;
         } else {
-            return 7.5625 * (t -= 2.625 / 2.75) * t + 0.984375;
+            // 追加の小さなバウンス
+            return 1 + n1 * (t -= 2.9 / d1) * t * 0.1;
         }
     }
     
@@ -343,10 +350,6 @@ class Player extends GameObject {
             alpha = 128;
         }
         
-        // グローエフェクト（法則2: フィードバックループ）
-        if (CONFIG.LAW_OF_FEEDBACK.GLOW.ENABLED && CONFIG.LAW_OF_FEEDBACK.ENABLED) {
-            this.renderGlow(playerColor, alpha);
-        }
         
         // メインプレイヤー描画
         fill(playerColor[0], playerColor[1], playerColor[2], alpha);
@@ -391,19 +394,6 @@ class Player extends GameObject {
         translate(-this.x, -this.y);
     }
     
-    // グローエフェクト描画
-    renderGlow(color, alpha) {
-        const glowSize = this.size * 1.5;
-        const glowAlpha = alpha * 0.3 * CONFIG.LAW_OF_FEEDBACK.GLOW.INTENSITY;
-        
-        // 複数層のグロー
-        for (let i = 3; i > 0; i--) {
-            fill(color[0], color[1], color[2], glowAlpha / i);
-            noStroke();
-            rectMode(CENTER);
-            rect(this.x, this.y, glowSize * i * 0.7, glowSize * i * 0.7);
-        }
-    }
     
     // ゲームオーバーチェック
     isDead() {

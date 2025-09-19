@@ -333,7 +333,7 @@ class GameState {
         // コンボ数に応じた視覚効果
         const comboIntensity = Math.min(this.stats.currentCombo / 10, 2);
         const pulsePhase = millis() * 0.01 * CONFIG.LAW_OF_FEEDBACK.COMBO_EFFECTS.PULSE_FREQUENCY;
-        const pulseFactor = 1 + Math.sin(pulsePhase) * 0.2 * comboIntensity;
+        const pulseFactor = 1 + Math.sin(pulsePhase) * 0.05 * comboIntensity;
         
         // 位置とサイズ
         const x = 20;

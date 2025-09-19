@@ -189,7 +189,7 @@ class VisualFeedback {
             this.flash.color[0],
             this.flash.color[1], 
             this.flash.color[2],
-            this.flash.intensity * 255
+            this.flash.intensity * 120
         );
         noStroke();
         rect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
@@ -318,9 +318,9 @@ class VisualFeedback {
         // カメラ揺れも同時に
         this.triggerCameraShake(2 + comboCount, duration);
         
-        // フラッシュエフェクト
+        // フラッシュエフェクト（強度を弱める）
         const flashColor = [255, 255 - comboCount * 20, 100];
-        this.triggerFlash(flashColor, duration / 2, 0.5);
+        this.triggerFlash(flashColor, duration / 2, 0.2);
     }
     
     // ポストエフェクトをトリガー
@@ -397,6 +397,72 @@ class VisualFeedback {
                 }
                 break;
         }
+    }
+    
+    // 高度なGlowエフェクト描画
+    renderAdvancedGlow(x, y, size, color, intensity = 1.0) {
+        if (!CONFIG.LAW_OF_FEEDBACK.GLOW.ENABLED) return;
+        
+        push();
+        
+        // ブレンドモードをADDに設定（光の効果）
+        blendMode(ADD);
+        
+        const glowRadius = size * 2;
+        const glowAlpha = intensity * CONFIG.LAW_OF_FEEDBACK.GLOW.INTENSITY * 50;
+        
+        // 複数レイヤーでGlowを描画（より自然なGlow）
+        for (let i = 0; i < 8; i++) {
+            const currentRadius = glowRadius * (1 + i * 0.3);
+            const currentAlpha = glowAlpha / (i + 1);
+            
+            fill(color[0], color[1], color[2], currentAlpha);
+            noStroke();
+            ellipse(x, y, currentRadius, currentRadius);
+        }
+        
+        // 中央の明るいコア
+        fill(255, 255, 255, glowAlpha * 0.8);
+        ellipse(x, y, size * 0.5, size * 0.5);
+        
+        blendMode(BLEND);
+        pop();
+    }
+    
+    // シンプルなBlurエフェクト（複数オフセット描画）
+    renderSimpleBlur(x, y, size, color, blurRadius = 3, alpha = 100) {
+        push();
+        
+        const offsets = [
+            [-1, -1], [0, -1], [1, -1],
+            [-1,  0],          [1,  0],
+            [-1,  1], [0,  1], [1,  1]
+        ];
+        
+        // 周囲にオフセットして描画
+        for (let offset of offsets) {
+            for (let r = 1; r <= blurRadius; r++) {
+                fill(color[0], color[1], color[2], alpha / (r * 2));
+                noStroke();
+                ellipse(
+                    x + offset[0] * r,
+                    y + offset[1] * r,
+                    size,
+                    size
+                );
+            }
+        }
+        
+        pop();
+    }
+    
+    // 動的グローエフェクト（パルス付き）
+    renderPulsingGlow(x, y, size, color, pulseSpeed = 0.05) {
+        const time = millis() * pulseSpeed;
+        const pulseFactor = 0.7 + Math.sin(time) * 0.3;
+        const glowIntensity = pulseFactor * CONFIG.LAW_OF_FEEDBACK.GLOW.INTENSITY;
+        
+        this.renderAdvancedGlow(x, y, size, color, glowIntensity);
     }
     
     // 全エフェクトリセット
