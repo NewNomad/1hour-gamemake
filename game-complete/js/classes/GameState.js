@@ -136,9 +136,15 @@ class GameState {
     
     // 弾丸発射
     shootBullet() {
-        const bullet = this.player.shoot();
-        if (bullet) {
-            this.bullets.push(bullet);
+        const bullets = this.player.shoot(this.enemies);
+        if (bullets) {
+            // 配列の場合は全ての弾を追加
+            if (Array.isArray(bullets)) {
+                this.bullets.push(...bullets);
+            } else {
+                // 単発の場合（後方互換性）
+                this.bullets.push(bullets);
+            }
         }
     }
     
@@ -217,8 +223,8 @@ class GameState {
     
     // ゲーム画面描画
     renderGame() {
-        // プレイヤー描画
-        this.player.render();
+        // プレイヤー描画（敵の情報も渡す）
+        this.player.render(this.enemies);
         
         // 敵描画
         for (let enemy of this.enemies) {

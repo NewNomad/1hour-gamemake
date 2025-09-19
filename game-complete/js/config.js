@@ -25,6 +25,24 @@ const CONFIG = {
     INITIAL_LIVES: 3,
     SCORE_PER_ENEMY: 10,
     
+    // 法則1: 意味のある選択の設定
+    LAW_OF_CHOICE: {
+        ENABLED: true,
+        SHOTGUN_SPREAD_ANGLE: 15,  // ショットガンの拡散角度（度）
+        CLOSE_RANGE: 150,          // 近距離判定（ピクセル）
+        MID_RANGE: 300,            // 中距離判定（ピクセル）
+        
+        // 距離ベースの発射レート（ミリ秒）
+        SHOOT_COOLDOWN_CLOSE: 100,   // 近距離: 高速
+        SHOOT_COOLDOWN_MID: 200,     // 中距離: 中速  
+        SHOOT_COOLDOWN_FAR: 300,     // 遠距離: 低速
+        
+        // ダメージ倍率
+        DAMAGE_MULTIPLIER_CLOSE: 3,  // 近距離時の全弾ヒットダメージ
+        DAMAGE_MULTIPLIER_MID: 2,    // 中距離時
+        DAMAGE_MULTIPLIER_FAR: 1     // 遠距離時
+    },
+    
     // デバッグ設定
     DEBUG_MODE: false,
     SHOW_HITBOXES: false,

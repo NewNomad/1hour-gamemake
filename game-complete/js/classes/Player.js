@@ -103,15 +103,52 @@ class Player extends GameObject {
         return minDistance;
     }
     
+    // 距離ベースの発射レート計算
+    getShootCooldown(enemies) {
+        if (!CONFIG.LAW_OF_CHOICE.ENABLED) {
+            return CONFIG.SHOOT_COOLDOWN;
+        }
+        
+        const closestDistance = this.getClosestEnemyDistance(enemies);
+        
+        if (closestDistance <= CONFIG.LAW_OF_CHOICE.CLOSE_RANGE) {
+            // 近距離: 高速発射
+            return CONFIG.LAW_OF_CHOICE.SHOOT_COOLDOWN_CLOSE;
+        } else if (closestDistance <= CONFIG.LAW_OF_CHOICE.MID_RANGE) {
+            // 中距離: 中速発射
+            return CONFIG.LAW_OF_CHOICE.SHOOT_COOLDOWN_MID;
+        } else {
+            // 遠距離: 低速発射
+            return CONFIG.LAW_OF_CHOICE.SHOOT_COOLDOWN_FAR;
+        }
+    }
+    
     // プレイヤーの描画
-    render() {
+    render(enemies = []) {
         push();
+        
+        // 距離ベースの色変化（法則1のフィードバック）
+        let playerColor = [...CONFIG.PLAYER_COLOR];
+        if (CONFIG.LAW_OF_CHOICE.ENABLED && enemies.length > 0) {
+            const closestDistance = this.getClosestEnemyDistance(enemies);
+            
+            if (closestDistance <= CONFIG.LAW_OF_CHOICE.CLOSE_RANGE) {
+                // 近距離: 赤系（高リスク・高リターン）
+                playerColor = [255, 100, 100];
+            } else if (closestDistance <= CONFIG.LAW_OF_CHOICE.MID_RANGE) {
+                // 中距離: 黄系（バランス）
+                playerColor = [255, 200, 100];
+            } else {
+                // 遠距離: 青系（低リスク・低リターン）
+                playerColor = [100, 150, 255];
+            }
+        }
         
         // 無敵時間中は点滅
         if (this.invulnerable && Math.floor(millis() / 100) % 2 === 0) {
-            fill(CONFIG.PLAYER_COLOR[0], CONFIG.PLAYER_COLOR[1], CONFIG.PLAYER_COLOR[2], 128);
+            fill(playerColor[0], playerColor[1], playerColor[2], 128);
         } else {
-            fill(CONFIG.PLAYER_COLOR[0], CONFIG.PLAYER_COLOR[1], CONFIG.PLAYER_COLOR[2]);
+            fill(playerColor[0], playerColor[1], playerColor[2]);
         }
         
         noStroke();
@@ -139,27 +176,55 @@ class Player extends GameObject {
         return this.lives <= 0;
     }
     
-    // 射撃処理
-    shoot() {
+    // 射撃処理（ショットガンシステム）
+    shoot(enemies) {
         const currentTime = millis();
         
+        // 距離ベースの発射レート計算
+        const shootCooldown = this.getShootCooldown(enemies);
+        
         // クールダウン中かチェック
-        if (currentTime - this.lastShotTime < CONFIG.SHOOT_COOLDOWN) {
+        if (currentTime - this.lastShotTime < shootCooldown) {
             return null;
         }
         
-        // 弾丸を生成（プレイヤーの右端から右方向に発射）
-        const bulletX = this.x + this.size / 2 + 5;
-        const bulletY = this.y;
-        const bullet = new Bullet(bulletX, bulletY); // デフォルトで右方向
+        const bullets = [];
+        
+        if (CONFIG.LAW_OF_CHOICE.ENABLED) {
+            // ショットガンシステム: 3つの弾を発射
+            const bulletX = this.x + this.size / 2 + 5;
+            const bulletY = this.y;
+            const spreadAngle = CONFIG.LAW_OF_CHOICE.SHOTGUN_SPREAD_ANGLE;
+            
+            // 中央の弾（まっすぐ）
+            bullets.push(new Bullet(bulletX, bulletY, 1, 0));
+            
+            // 上方向の弾
+            const upAngleRad = -spreadAngle * Math.PI / 180;
+            const upDirX = Math.cos(upAngleRad);
+            const upDirY = Math.sin(upAngleRad);
+            bullets.push(new Bullet(bulletX, bulletY, upDirX, upDirY));
+            
+            // 下方向の弾
+            const downAngleRad = spreadAngle * Math.PI / 180;
+            const downDirX = Math.cos(downAngleRad);
+            const downDirY = Math.sin(downAngleRad);
+            bullets.push(new Bullet(bulletX, bulletY, downDirX, downDirY));
+        } else {
+            // 従来の単発システム
+            const bulletX = this.x + this.size / 2 + 5;
+            const bulletY = this.y;
+            bullets.push(new Bullet(bulletX, bulletY, 1, 0));
+        }
         
         this.lastShotTime = currentTime;
-        return bullet;
+        return bullets;
     }
     
     // 射撃可能かチェック
-    canShoot() {
-        return (millis() - this.lastShotTime) >= CONFIG.SHOOT_COOLDOWN;
+    canShoot(enemies) {
+        const shootCooldown = this.getShootCooldown(enemies);
+        return (millis() - this.lastShotTime) >= shootCooldown;
     }
     
     // リセット（新しいゲーム用）
