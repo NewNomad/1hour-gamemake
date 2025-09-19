@@ -151,6 +151,75 @@ const CONFIG = {
     DEBUG_MODE: false,
     SHOW_HITBOXES: false,
     
+    // 法則3: 発見の喜びの設定
+    LAW_OF_DISCOVERY: {
+        ENABLED: true,
+        
+        // ウェーブシステム
+        WAVE_SYSTEM: {
+            ENEMIES_PER_WAVE: 15,        // ウェーブごとの敵数
+            SPAWN_PATTERNS: [             // ランダム出現パターン
+                'random',
+                'formation_v',
+                'formation_circle',
+                'formation_line',
+                'formation_spiral'
+            ],
+            DIFFICULTY_MULTIPLIER: 1.2    // ウェーブごとの難易度倍率
+        },
+        
+        // パワーアップシステム
+        POWER_UPS: {
+            FIRE_RATE: {
+                name: '高速発射',
+                description: '発射レートが50%向上',
+                effect: 'shootCooldown',
+                value: 0.5,
+                penalty: 'enemySpeed',
+                penaltyValue: 1.3
+            },
+            SPEED_BOOST: {
+                name: '高速移動',
+                description: '移動速度が40%向上',
+                effect: 'playerSpeed',
+                value: 1.4,
+                penalty: 'enemyCount',
+                penaltyValue: 1.5
+            },
+            EXTRA_LIFE: {
+                name: '追加ライフ',
+                description: 'ライフが1つ追加',
+                effect: 'lives',
+                value: 1,
+                penalty: 'enemyHP',
+                penaltyValue: 1.5
+            },
+            BULLET_POWER: {
+                name: '弾威力向上',
+                description: '弾のダメージが倍増',
+                effect: 'bulletDamage',
+                value: 2,
+                penalty: 'enemySize',
+                penaltyValue: 1.2
+            },
+            SPREAD_BOOST: {
+                name: '拡散強化',
+                description: 'ショットガンの角度が広がる',
+                effect: 'shotgunSpread',
+                value: 1.5,
+                penalty: 'waveEnemies',
+                penaltyValue: 1.3
+            }
+        },
+        
+        // ランダム要素
+        RANDOMIZATION: {
+            CRITICAL_CHANCE: 0.1,         // クリティカル確率
+            RARE_ENEMY_CHANCE: 0.05,      // レア敵出現確率
+            BONUS_SCORE_CHANCE: 0.15      // ボーナススコア確率
+        }
+    },
+    
     // 敵のタイプ定義
     ENEMY_TYPES: {
         BASIC: {

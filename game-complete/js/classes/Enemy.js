@@ -70,10 +70,12 @@ class Enemy extends GameObject {
     
     // ダメージを受ける
     takeDamage(damage = 1) {
-        this.hp -= damage;
+        // パワーアップによるダメージ倍率を適用（法則3: 発見の喜び）
+        const finalDamage = damage * (CONFIG.BULLET_DAMAGE || 1);
+        
+        this.hp -= finalDamage;
         if (this.hp <= 0) {
-            this.destroy();
-            return true; // 破壊された
+            return true; // 破壊された（GameStateで一括処理）
         }
         return false; // まだ生きている
     }

@@ -85,9 +85,14 @@ class Bullet extends GameObject {
                 // 命中エフェクト生成（法則2: フィードバックループ）
                 this.generateHitEffect(enemy);
                 
+                // 敵にダメージを与える
+                const destroyed = enemy.takeDamage(1);
+                
                 // 弾丸を無効化
                 this.destroy();
-                return enemy; // 衝突した敵を返す
+                
+                // 敵が破壊された場合のみ返す
+                return destroyed ? enemy : null;
             }
         }
         return null;

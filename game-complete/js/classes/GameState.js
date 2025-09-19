@@ -26,6 +26,9 @@ class GameState {
         // パララックス背景システム
         this.background = new Background();
         
+        // 発見システム（法則3: 発見の喜び）
+        this.discoverySystem = new DiscoverySystem();
+        
         this.init();
     }
     
@@ -45,6 +48,9 @@ class GameState {
         
         // 背景システムをリセット
         this.background.reset();
+        
+        // 発見システムをリセット（法則3: 発見の喜び）
+        this.discoverySystem.reset();
     }
     
     // ゲーム開始
@@ -120,12 +126,21 @@ class GameState {
     
     // 敵の出現処理
     spawnEnemies() {
+        // パワーアップ選択中は敵を生成しない（法則3: 発見の喜び）
+        if (CONFIG.LAW_OF_DISCOVERY.ENABLED && this.discoverySystem.powerUpSelectionActive) {
+            return;
+        }
+        
         this.enemySpawnTimer++;
         
         if (this.enemySpawnTimer >= CONFIG.ENEMY_SPAWN_RATE) {
             this.enemySpawnTimer = 0;
             
-            const spawnPos = Enemy.getRandomSpawnPosition();
+            // 発見システムによる出現位置の決定（法則3: 発見の喜び）
+            const spawnPos = CONFIG.LAW_OF_DISCOVERY.ENABLED ? 
+                this.discoverySystem.getSpawnPosition() : 
+                Enemy.getRandomSpawnPosition();
+                
             const enemyType = Enemy.getRandomType();
             const enemy = new Enemy(spawnPos.x, spawnPos.y, enemyType);
             
@@ -151,6 +166,7 @@ class GameState {
                 // 弾丸と敵の当たり判定
                 const hitEnemy = bullet.checkEnemyCollision(this.enemies);
                 if (hitEnemy) {
+                    // 敵が破壊された場合のみdestroyEnemyを呼ぶ
                     this.destroyEnemy(hitEnemy);
                 }
             }
@@ -205,11 +221,25 @@ class GameState {
     
     // 敵を破壊（外部から呼び出し用）
     destroyEnemy(enemy) {
-        if (enemy.isActive) {
+        if (enemy && enemy.isActive) {
             this.score += enemy.scoreValue;
             this.stats.enemiesDestroyed++;
             this.stats.currentCombo++;
             this.stats.maxCombo = Math.max(this.stats.maxCombo, this.stats.currentCombo);
+            
+            // 発見システムに敵撃破を通知（法則3: 発見の喜び）
+            if (CONFIG.LAW_OF_DISCOVERY.ENABLED) {
+                const waveCleared = this.discoverySystem.onEnemyDestroyed();
+                if (waveCleared) {
+                    // ウェーブクリア時のエフェクト
+                    this.effectManager.createExplosion(
+                        CONFIG.CANVAS_WIDTH / 2, 
+                        CONFIG.CANVAS_HEIGHT / 2, 
+                        3, 
+                        [255, 255, 100]
+                    );
+                }
+            }
             
             // エフェクト生成（法則2: フィードバックループ）
             if (CONFIG.LAW_OF_FEEDBACK.ENABLED) {
@@ -310,6 +340,11 @@ class GameState {
         
         // UI描画
         this.renderUI();
+        
+        // 発見システムの描画（法則3: 発見の喜び）
+        if (CONFIG.LAW_OF_DISCOVERY.ENABLED) {
+            this.discoverySystem.renderPowerUpSelection();
+        }
     }
     
     // UI描画
@@ -325,6 +360,12 @@ class GameState {
         text(`時間: ${this.gameTime.toFixed(1)}s`, 20, 80);
         text(`敵撃破: ${this.stats.enemiesDestroyed}`, 20, 110);
         
+        // ウェーブ情報（法則3: 発見の喜び）
+        if (CONFIG.LAW_OF_DISCOVERY.ENABLED) {
+            text(`ウェーブ: ${this.discoverySystem.currentWave}`, 20, 140);
+            text(`残り敵: ${this.discoverySystem.enemiesPerWave - this.discoverySystem.enemiesKilledInWave}`, 20, 170);
+        }
+        
         // コンボカウンター（法則2: フィードバックループで強化）
         if (this.stats.currentCombo > 0) {
             this.renderComboCounter();
@@ -335,9 +376,12 @@ class GameState {
     
     // コンボカウンター描画（法則2: フィードバックループ）
     renderComboCounter() {
+        // ウェーブ情報がある場合はY位置を調整
+        const comboY = CONFIG.LAW_OF_DISCOVERY.ENABLED ? 200 : 140;
+        
         if (!CONFIG.LAW_OF_FEEDBACK.COMBO_EFFECTS.ENABLED) {
             // 通常のコンボ表示
-            text(`コンボ: ${this.stats.currentCombo}`, 20, 140);
+            text(`コンボ: ${this.stats.currentCombo}`, 20, comboY);
             return;
         }
         
@@ -350,7 +394,7 @@ class GameState {
         
         // 位置とサイズ
         const x = 20;
-        const y = 140;
+        const y = comboY;
         const baseSize = 20;
         const currentSize = baseSize * pulseFactor * CONFIG.LAW_OF_FEEDBACK.COMBO_EFFECTS.SCALE_BOOST;
         
@@ -448,6 +492,11 @@ class GameState {
         // 背景システムのデバッグ情報
         this.background.renderDebugInfo();
         
+        // 発見システムのデバッグ情報（法則3: 発見の喜び）
+        if (CONFIG.LAW_OF_DISCOVERY.ENABLED) {
+            this.discoverySystem.renderDebugInfo();
+        }
+        
         pop();
     }
     
@@ -464,6 +513,11 @@ class GameState {
     
     // キー入力処理
     handleKeyPress(key) {
+        // 発見システムのキー入力を優先処理（法則3: 発見の喜び）
+        if (CONFIG.LAW_OF_DISCOVERY.ENABLED && this.discoverySystem.handleKeyPress(key, this.player)) {
+            return; // イベントが消費された場合は他の処理をスキップ
+        }
+        
         switch (this.state) {
             case 'MENU':
                 if (key === ' ') {
