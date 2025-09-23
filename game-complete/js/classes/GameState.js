@@ -29,6 +29,9 @@ class GameState {
         // 発見システム（法則3: 発見の喜び）
         this.discoverySystem = new DiscoverySystem();
         
+        // タイトル画面システム
+        this.titleScreen = new TitleScreen();
+        
         this.init();
     }
     
@@ -83,7 +86,10 @@ class GameState {
     
     // メインアップデートループ
     update() {
-        if (this.state === 'PLAYING') {
+        if (this.state === 'MENU') {
+            // タイトル画面の更新
+            this.titleScreen.update();
+        } else if (this.state === 'PLAYING') {
             this.updateGame();
         }
     }
@@ -318,18 +324,24 @@ class GameState {
     
     // メニュー画面描画
     renderMenu() {
-        push();
-        fill(255);
-        textAlign(CENTER, CENTER);
-        textSize(48);
-        text("GAME BASE", CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 - 100);
-        
-        textSize(24);
-        text("スペースキーでゲーム開始", CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2);
-        text("WASD または 矢印キーで移動", CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 + 40);
-        text("スペースキーで射撃", CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 + 80);
-        text("`キーでデバッグモード切り替え", CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 + 120);
-        pop();
+        if (CONFIG.TITLE_SCREEN.ENABLED) {
+            // 超リッチなタイトル画面
+            this.titleScreen.render();
+        } else {
+            // 元のシンプルなメニュー画面
+            push();
+            fill(255);
+            textAlign(CENTER, CENTER);
+            textSize(48);
+            text("GAME BASE", CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 - 100);
+            
+            textSize(24);
+            text("スペースキーでゲーム開始", CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2);
+            text("WASD または 矢印キーで移動", CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 + 40);
+            text("スペースキーで射撃", CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 + 80);
+            text("`キーでデバッグモード切り替え", CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 + 120);
+            pop();
+        }
     }
     
     // ゲーム画面描画

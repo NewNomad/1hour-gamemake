@@ -243,6 +243,47 @@ const CONFIG = {
             hp: 3,
             score: 25
         }
+    },
+    
+    // タイトル画面設定
+    TITLE_SCREEN: {
+        ENABLED: true,
+        
+        // アニメーション設定
+        ANIMATIONS: {
+            TITLE_PULSE_SPEED: 0.03,
+            TITLE_FLOAT_SPEED: 0.02,
+            TITLE_FLOAT_AMPLITUDE: 10,
+            GLITCH_PROBABILITY: 0.95,
+            CHROMATIC_SPEED: 0.05,
+            CHROMATIC_AMPLITUDE: 3
+        },
+        
+        // パーティクル設定
+        PARTICLES: {
+            STAR_COUNT: 100,
+            BINARY_COUNT: 30,
+            ENERGY_ORB_COUNT: 5,
+            BACKGROUND_ENEMY_COUNT: 8,
+            SPARK_PROBABILITY: 0.1
+        },
+        
+        // エフェクト設定
+        EFFECTS: {
+            SCANLINE_ENABLED: true,
+            CRT_WARP_ENABLED: true,
+            NOISE_ENABLED: true,
+            GRID_ENABLED: true,
+            NEON_GLOW_ENABLED: true
+        },
+        
+        // デモプレイヤー設定
+        DEMO_PLAYER: {
+            ENABLED: true,
+            MOVE_INTERVAL: 120, // フレーム数
+            TRAIL_LENGTH: 50,
+            ROTATION_SPEED: 0.02
+        }
     }
 };
 
