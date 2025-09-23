@@ -105,15 +105,19 @@ class Background {
             
             // 画面の範囲内（少し余裕を持って）にあるビルのみ描画
             if (screenX + building.width > -100 && screenX < CONFIG.CANVAS_WIDTH + 100) {
-                // ビル本体
+                // ビルの延長分（画面外まで伸ばす）
+                const buildingExtension = CONFIG.CANVAS_HEIGHT * 0.5; // 画面高さの50%分延長
+                const totalHeight = building.height + buildingExtension;
+                
+                // ビル本体（延長分も含めて描画）
                 rect(
                     screenX,
                     screenY - building.height,
                     building.width,
-                    building.height
+                    totalHeight
                 );
                 
-                // ビルの窓（簡易的）
+                // ビルの窓（元の高さ部分のみ）
                 this.renderWindows(
                     screenX, 
                     screenY - building.height, 
