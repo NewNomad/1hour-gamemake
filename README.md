@@ -2,6 +2,11 @@
 
 p5.jsで作るシンプルなアクションゲームを通じて、ゲーム開発の楽しさを体験しよう！
 
+
+<img width="2401" height="1792" alt="image" src="https://github.com/user-attachments/assets/02af2002-b9a5-4742-88a1-fdf2c0b5dc22" />
+
+https://github.com/user-attachments/assets/cfa75181-3f4a-4a57-b063-a9be2b81d3d3
+
 ## 🎯 このワークショップで学べること
 
 ゲーム開発における3つの重要な法則を、実際にゲームを作りながら学習します：
